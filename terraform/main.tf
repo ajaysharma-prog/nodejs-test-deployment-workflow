@@ -1,5 +1,5 @@
-module "dynamodb_tables" {
-  source   = "./modules/dyanmoDB"
+module "dynamoDB_tables" {
+  source   = "./modules/dynamoDB"
   for_each = var.dynamodb_tables
 
   table_name               = each.key

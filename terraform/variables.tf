@@ -1,3 +1,5 @@
+///////////////////////////////////// DynamoDB //////////////////////////////////////////////////////
+
 variable "project_name" {
   type        = string
   description = "Describe the name of the project"
@@ -27,11 +29,16 @@ variable "dynamodb_tables" {
       name = string
       type = string
     })), [])
-    local_secondary_indexes = optional(list(any), [])
+    local_secondary_indexes = optional(list(object({
+      name                = string
+      range_key           = string
+      projection_type     = string
+      non_key_attributes = optional(list(string), null)
+    })), [])
     global_secondary_indexes = optional(list(object({
       name               = string
       projection_type    = string
-      non_key_attributes = list(string)
+      non_key_attributes = optional(list(string), null)
       key_schema = list(object({
         attribute_name = string
         key_type       = string
@@ -39,3 +46,6 @@ variable "dynamodb_tables" {
     })), [])
   }))
 }
+
+/////////////////////////////////////////// Lambda ///////////////////////////////////////////////////
+

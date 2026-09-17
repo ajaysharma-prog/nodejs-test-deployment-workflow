@@ -43,6 +43,7 @@ variable "local_secondary_indexes" {
     name            = string
     range_key       = string
     projection_type = string
+    non_key_attributes  = optional(list(string), null)
   }))
   default     = []
   description = "A list of Local Secondary Indexes."

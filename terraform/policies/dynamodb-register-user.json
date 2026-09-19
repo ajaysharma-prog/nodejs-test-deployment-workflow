@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDBReadPutAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Query",
+        "dynamodb:PutItem"
+      ],
+      "Resource": ["${table_arn}", "${gsi_arn}"]
+    }
+  ]
+}

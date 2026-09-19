@@ -1,18 +1,27 @@
-**/.terraform/*
-
-*.tfstate
-*.tfstate.*
-
-crash.log
-crash.*.log
-
+# Local Infrastructure Envs & Variables
 *.tfvars
 *.tfvars.json
 
-.terraform.tfstate.lock.info
-*tfplan*
+# Terraform Runtime States & Local Configurations
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+crash.log
 
-.terraformrc
-terraform.rc
+# Node JSON Engine Dependencies
+node_modules/
+package-lock.json
 
-.vs/*
+# Compiled Application Code Bundles & Deployments Archives
+dist/
+build/
+zip/
+zip/bundles/
+*.zip
+
+# Sensitive Security Keys & System Cache files
+.env
+.env.*
+.DS_Store
+Thumbs.db

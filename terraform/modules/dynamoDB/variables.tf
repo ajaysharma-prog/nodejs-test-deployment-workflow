@@ -34,16 +34,16 @@ variable "range_key_type" {
 }
 
 variable "aws_encryption_key_arn" {
-  type = string
+  type        = string
   description = "Encryption key to encrypt data"
 }
 
 variable "local_secondary_indexes" {
   type = list(object({
-    name            = string
-    range_key       = string
-    projection_type = string
-    non_key_attributes  = optional(list(string), null)
+    name               = string
+    range_key          = string
+    projection_type    = string
+    non_key_attributes = optional(list(string), null)
   }))
   default     = []
   description = "A list of Local Secondary Indexes."

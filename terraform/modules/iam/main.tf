@@ -1,12 +1,25 @@
 resource "aws_iam_role" "this" {
   name               = var.role_name
   assume_role_policy = var.assume_role_policy
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.role_name}"
+    }
+  )
 }
 
 resource "aws_iam_policy" "custom" {
   for_each = var.custom_policies
   name     = "${var.role_name}-${each.key}"
   policy   = each.value
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.role_name}-${each.key}"
+    }
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "custom" {

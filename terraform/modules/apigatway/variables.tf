@@ -55,3 +55,39 @@ variable "lambda_functions" {
     invoke_arn    = string
   }))
 }
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of resource tags."
+}
+
+variable "environment" {
+  type        = string
+  description = "Type of environment of the project like prod or dev"
+  default     = "dev"
+}
+
+variable "integration_type" {
+  type        = string
+  default     = "aws_proxy"
+  description = "The proxy backend integration type."
+}
+
+variable "integration_http_method" {
+  type        = string
+  default     = "POST"
+  description = "The downstream HTTP transmission method."
+}
+
+variable "passthrough_behavior" {
+  type        = string
+  default     = "when_no_match"
+  description = "Fallback data body matching behaviors."
+}
+
+variable "content_handling" {
+  type        = string
+  default     = "CONVERT_TO_TEXT"
+  description = "Controls incoming payload data formatting conversions before hit execution."
+}

@@ -19,3 +19,21 @@ variable "environment_variables" {
   description = "A map of environment variables to pass to the Lambda function"
   default     = {}
 }
+
+variable "lambda_timeout" {
+  type        = number
+  default     = 30
+  description = "The maximum amount of time (in seconds) that the Lambda function can run."
+}
+
+variable "environment" {
+  type        = string
+  description = "Type of environment of the project like prod or dev"
+  default     = "dev"
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of resource tags."
+}

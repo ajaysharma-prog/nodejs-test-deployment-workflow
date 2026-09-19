@@ -3,17 +3,19 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
-"scripts": {
-  "build": "tsc && esbuild dist/handlers/*.js --bundle --platform=node --target=node24 --outdir=dist/bundles --format=cjs --external:@aws-sdk/* "
-},
+  "scripts": {
+    "build": "tsc && esbuild dist/handlers/*.js --bundle --platform=node --target=node24 --outdir=dist/bundles --format=cjs --external:@aws-sdk/* "
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1134.0",
+    "@aws-sdk/client-ssm": "^3.1136.0",
     "@aws-sdk/lib-dynamodb": "^3.1134.0",
-    "bcryptjs": "^3.0.3"
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.12"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.163",

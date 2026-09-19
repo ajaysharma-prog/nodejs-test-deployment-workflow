@@ -19,3 +19,15 @@ variable "managed_policy_arns" {
   default     = []
   description = "An array collection listing specific static standard AWS managed policies ARNs."
 }
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of resource tags."
+}
+
+variable "environment" {
+  type        = string
+  description = "Type of environment of the project like prod or dev"
+  default     = "dev"
+}

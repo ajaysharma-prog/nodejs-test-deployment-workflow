@@ -8,35 +8,18 @@ resource "aws_api_gateway_rest_api" "event_management_system_api_gateway" {
       title   = var.api_name
       version = "1.0.0"
     }
-    paths = {
-      for route_key, route_val in var.routes : "/${route_val.resource_path}" => {
-        x-amazon-apigateway-any-method = {
-          produces = ["application/json"]
-          responses = {
-            "200" = {
-              description = "Success"
-            }
-          }
-          x-amazon-apigateway-integration = {
-            uri                 = var.lambda_functions[route_val.lambda_key].invoke_arn
-            responses           = { default = { statusCode = "200" } }
-            passthroughBehavior = "when_no_match"
-            httpMethod          = "POST"
-            contentHandling     = "CONVERT_TO_TEXT"
-            type                = "aws_proxy"
-          }
-        }
-      }
-    }
+    paths = local.api_paths
   })
 
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 
-  tags = {
-    Name = "${var.api_name}-rest-api"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.api_name}-rest-api"
+    })
 }
 
 resource "aws_lambda_permission" "api_gateway" {
@@ -65,7 +48,9 @@ resource "aws_api_gateway_stage" "this" {
   deployment_id = aws_api_gateway_deployment.this.id
   stage_name    = var.stage_name
 
-  tags = {
-    Name = "${var.api_name}-${var.stage_name}-stage"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.api_name}-${var.stage_name}-stage"
+    })
 }

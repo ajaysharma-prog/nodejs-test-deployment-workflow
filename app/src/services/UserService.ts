@@ -3,9 +3,12 @@ import { RegisterUserDto } from "../dto/request/RegisterUserRequestDTO"
 import { UserRole } from "../constant/UserRole"
 import { User } from "../models/User";
 import { ResponseMessage } from "../constant/ResponseMessage";
-import { hashPassword } from "../utils/passwordUtil";
+import { comparePassword, hashPassword } from "../utils/passwordUtil";
 import { UserResponse } from "../dto/response/RegisterUserResponseDTO"
 import { createUser, findByEmail } from "../repositories/UserRepository";
+import { LoginUserDto } from "../dto/request/LoginUserRequestDto";
+import { getSecret } from "../utils/secretUtils";
+import { SignJWT } from "jose";
 
 
 export async function registerUser(request: RegisterUserDto): Promise<UserResponse> {
@@ -48,4 +51,28 @@ export async function registerUser(request: RegisterUserDto): Promise<UserRespon
     };
 
     return registerUserResponse;
+}
+
+export async function loginUser(loginUserDto: LoginUserDto) {
+    const email = loginUserDto.email.trim().toLowerCase();
+
+    const user = await findByEmail(email);
+    if (user == null || ! await comparePassword(loginUserDto.password, user.passwordHash)) {
+        throw new Error(ResponseMessage.INVALID_LOGIN_CREDIENTAL);
+    }
+
+    const secretKey = await getSecret(`/myapp/${process.env.ENVIRONMENT}/JWT_SECRET_KEY`);
+    const secret =  new TextEncoder().encode(secretKey);
+   const jwtToken = await new SignJWT({
+        email: user.email,
+        role: user.role,
+    })
+    .setProtectedHeader({ alg: "HS256" })
+    .setJti(randomUUID())
+    .setSubject(user.userId)
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(secret); 
+
+    return jwtToken;
 }

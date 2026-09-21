@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ResponseMessage } from "../constant/ResponseMessage";
-import { LoginUserDto } from "../dto/request/LoginUserRequestDto";
+import { LoginUserDto } from "../dto/request/LoginUserRequestDTO";
 import { loginUser } from "../services/UserService";
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

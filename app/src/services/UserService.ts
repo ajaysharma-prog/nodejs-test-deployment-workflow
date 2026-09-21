@@ -4,9 +4,9 @@ import { UserRole } from "../constant/UserRole"
 import { User } from "../models/User";
 import { ResponseMessage } from "../constant/ResponseMessage";
 import { comparePassword, hashPassword } from "../utils/passwordUtil";
-import { UserResponse } from "../dto/response/RegisterUserResponseDTO"
+import { UserResponse } from "../dto/response/UserResponseDTO"
 import { createUser, findByEmail } from "../repositories/UserRepository";
-import { LoginUserDto } from "../dto/request/LoginUserRequestDto";
+import { LoginUserDto } from "../dto/request/LoginUserRequestDTO";
 import { getSecret } from "../utils/secretUtils";
 import { SignJWT } from "jose";
 
@@ -46,7 +46,7 @@ export async function registerUser(request: RegisterUserDto): Promise<UserRespon
       userId: user.userId,
       name: user.name,
       email: user.email,
-      role: request.role,                  
+      role: UserRole[user.role],                  
       walletBalance: user.walletBalance
     };
 
@@ -75,4 +75,22 @@ export async function loginUser(loginUserDto: LoginUserDto) {
     .sign(secret); 
 
     return jwtToken;
+}
+
+export async function getUser(email : string) : Promise<UserResponse> {
+
+    const user = await findByEmail(email);
+    if (user == null) {
+        throw new Error("User not found");
+    }
+
+    const userDetails: UserResponse = {
+      userId: user.userId,
+      name: user.name,
+      email: user.email,
+      role: UserRole[user.role].toString(),                  
+      walletBalance: user.walletBalance
+    };
+
+    return userDetails;
 }

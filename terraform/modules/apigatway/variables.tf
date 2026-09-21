@@ -74,12 +74,6 @@ variable "integration_type" {
   description = "The proxy backend integration type."
 }
 
-variable "integration_http_method" {
-  type        = string
-  default     = "POST"
-  description = "The downstream HTTP transmission method."
-}
-
 variable "passthrough_behavior" {
   type        = string
   default     = "when_no_match"
@@ -90,4 +84,14 @@ variable "content_handling" {
   type        = string
   default     = "CONVERT_TO_TEXT"
   description = "Controls incoming payload data formatting conversions before hit execution."
+}
+
+variable "authorizer_lambda_invoke_arn" {
+  type        = string
+  description = "Authorizer lambda invoke arn"
+}
+
+variable "authorizer_lambda_name" {
+  type        = string
+  description = "Authorizer Lambda name"
 }

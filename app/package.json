@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && esbuild dist/handlers/*.js --bundle --minify --platform=node --target=node24 --outdir=dist/bundles --format=cjs --external:@aws-sdk/* "
+    "build": "tsc && esbuild dist/handlers/*.js --bundle --minify --platform=node --target=node24 --outdir=dist/bundles --format=cjs "
   },
   "keywords": [],
   "author": "",

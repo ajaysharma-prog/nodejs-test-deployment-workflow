@@ -136,12 +136,11 @@ module "get_user_lambda_function" {
 }
 
 module "api_gateway" {
-  source     = "./modules/apigatway"
+  source     = "./modules/apigateway"
   api_name   = "${var.project_name}-api"
   stage_name = var.environment
   resources  = var.resources
   routes     = var.routes
-  integration_type        = "aws_proxy"
   passthrough_behavior    = "when_no_match"
   content_handling        = "CONVERT_TO_TEXT"
 

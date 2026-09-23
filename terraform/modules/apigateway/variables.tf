@@ -68,12 +68,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "integration_type" {
-  type        = string
-  default     = "aws_proxy"
-  description = "The proxy backend integration type."
-}
-
 variable "passthrough_behavior" {
   type        = string
   default     = "when_no_match"

@@ -71,7 +71,6 @@ resource "aws_api_gateway_stage" "this" {
   rest_api_id   = aws_api_gateway_rest_api.event_management_system_api_gateway.id
   deployment_id = aws_api_gateway_deployment.this.id
   stage_name    = var.stage_name
-
   tags = merge(
     var.tags,
     {

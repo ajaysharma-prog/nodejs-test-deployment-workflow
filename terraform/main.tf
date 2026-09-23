@@ -26,6 +26,7 @@ module "register_user_iam_role" {
   managed_policy_arns = []
   environment         = var.environment
   tags                = {}
+
 }
 
 module "register_user_lambda_function" {
@@ -166,5 +167,4 @@ module "api_gateway" {
   environment = var.environment
   description = var.api_gateway_description
   tags        = {}
-
 }

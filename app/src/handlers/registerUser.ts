@@ -4,13 +4,15 @@ import { ResponseMessage } from "../constant/ResponseMessage";
 import { registerUser } from "../services/UserService";
 
 export const handler = async (
-  event: APIGatewayProxyEvent
+  event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
     if (!event.body) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: ResponseMessage.MISSING_RESPONSE_BODY }),
+        body: JSON.stringify({
+          message: ResponseMessage.MISSING_RESPONSE_BODY,
+        }),
       };
     }
 
@@ -19,7 +21,9 @@ export const handler = async (
     if (!body.email || !body.password) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: ResponseMessage.EMAIL_PASSWORD_REQUIRED }),
+        body: JSON.stringify({
+          message: ResponseMessage.EMAIL_PASSWORD_REQUIRED,
+        }),
       };
     }
 
@@ -33,11 +37,14 @@ export const handler = async (
         user: createdUser,
       }),
     };
-
   } catch (error: any) {
     console.error("Registration error:", error);
 
-    if (error.message === ResponseMessage.USER_ALREADY_EXISTS) {
+    if (
+      error.message === ResponseMessage.USER_ALREADY_EXISTS ||
+      error.name === "ConditionalCheckFailedException" ||
+      error.__type?.endsWith("#ConditionalCheckFailedException")
+    ) {
       return {
         statusCode: 409,
         body: JSON.stringify({ message: error.message }),

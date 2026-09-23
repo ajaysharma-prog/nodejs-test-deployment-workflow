@@ -1,14 +1,18 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ResponseMessage } from "../constant/ResponseMessage";
-import { LoginUserDto } from "../dto/request/LoginUserRequestDTO";
-import { loginUser } from "../services/UserService";
+import { ResponseMessage } from "../constants/response-message";
+import { LoginUserDto } from "../dto/request/login-user-request";
+import { loginUser } from "../services/user-service";
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (
+  event: APIGatewayProxyEvent,
+): Promise<APIGatewayProxyResult> => {
   try {
     if (!event.body) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: ResponseMessage.MISSING_RESPONSE_BODY }),
+        body: JSON.stringify({
+          message: ResponseMessage.MISSING_RESPONSE_BODY,
+        }),
       };
     }
 
@@ -17,7 +21,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!body.email || !body.password) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: ResponseMessage.INVALID_LOGIN_CREDIENTAL }),
+        body: JSON.stringify({
+          message: ResponseMessage.INVALID_LOGIN_CREDIENTAL,
+        }),
       };
     }
 
@@ -31,7 +37,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         jwtToken: jwtToken,
       }),
     };
-
   } catch (error: any) {
     console.error("Registration error:", error);
 

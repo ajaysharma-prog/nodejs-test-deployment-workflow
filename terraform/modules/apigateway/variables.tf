@@ -14,15 +14,6 @@ variable "stage_name" {
   type        = string
 }
 
-variable "resources" {
-  description = "API Gateway resources"
-
-  type = map(object({
-    path_part   = string
-    parent_path = string
-  }))
-}
-
 variable "routes" {
   description = "API Gateway routes"
 
@@ -68,12 +59,6 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "integration_type" {
-  type        = string
-  default     = "aws_proxy"
-  description = "The proxy backend integration type."
-}
-
 variable "passthrough_behavior" {
   type        = string
   default     = "when_no_match"
@@ -94,4 +79,9 @@ variable "authorizer_lambda_invoke_arn" {
 variable "authorizer_lambda_name" {
   type        = string
   description = "Authorizer Lambda name"
+}
+
+variable "aws_region" {
+  type = string
+  description = "Current aws region of the resources." 
 }

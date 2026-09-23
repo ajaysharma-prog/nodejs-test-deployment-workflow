@@ -10,21 +10,21 @@ resource "aws_api_gateway_rest_api" "event_management_system_api_gateway" {
     }
     paths = local.api_paths
     components = {
-  securitySchemes = {
-    jwtLambdaAuthorizer = {
-      type = "apiKey"
-      name = "Authorization"
-      in   = "header"
-      x-amazon-apigateway-authtype = "custom"
-      x-amazon-apigateway-authorizer = {
-        type                         = "token"
-         authorizerUri               = var.authorizer_lambda_invoke_arn
-        authorizerResultTtlInSeconds = 300
-        identitySource               = "method.request.header.Authorization"
+      securitySchemes = {
+        jwtLambdaAuthorizer = {
+          type                         = "apiKey"
+          name                         = "Authorization"
+          in                           = "header"
+          x-amazon-apigateway-authtype = "custom"
+          x-amazon-apigateway-authorizer = {
+            type                         = "token"
+            authorizerUri                = var.authorizer_lambda_invoke_arn
+            authorizerResultTtlInSeconds = 300
+            identitySource               = "method.request.header.Authorization"
+          }
+        }
       }
     }
-  }
-}
   })
 
   endpoint_configuration {
@@ -35,7 +35,7 @@ resource "aws_api_gateway_rest_api" "event_management_system_api_gateway" {
     var.tags,
     {
       Name = "${var.environment}-${var.api_name}-rest-api"
-    })
+  })
 }
 
 resource "aws_lambda_permission" "api_gateway" {
@@ -76,5 +76,5 @@ resource "aws_api_gateway_stage" "this" {
     var.tags,
     {
       Name = "${var.environment}-${var.api_name}-${var.stage_name}-stage"
-    })
+  })
 }

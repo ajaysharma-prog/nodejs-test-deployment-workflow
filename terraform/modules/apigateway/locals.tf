@@ -6,13 +6,13 @@ locals {
         responses = {
           "200" = { description = "Success" }
         }
-        
+
         security = route_val.authorization != "NONE" ? [{ jwtLambdaAuthorizer = [] }] : []
 
         x-amazon-apigateway-integration = {
           uri                 = var.lambda_functions[route_val.lambda_key].invoke_arn
           responses           = { default = { statusCode = "200" } }
-          type                = var.integration_type
+          type                = "aws_proxy"
           httpMethod          = "POST"
           passthroughBehavior = var.passthrough_behavior
           contentHandling     = var.content_handling

@@ -54,7 +54,7 @@ resource "aws_dynamodb_table" "main_table" {
 
   server_side_encryption {
     enabled     = true
-    kms_key_arn = var.aws_encryption_key_arn
+    kms_key_arn = null
   }
 
   lifecycle {

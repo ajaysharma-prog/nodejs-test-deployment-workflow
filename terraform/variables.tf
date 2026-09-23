@@ -88,15 +88,6 @@ variable "lambda_timeout" {
 }
 
 /////////////////////////////////////////////////////APIGATEWAY/////////////////////////////////////////////
-variable "resources" {
-  description = "API Gateway resources"
-
-  type = map(object({
-    path_part   = string
-    parent_path = string
-  }))
-}
-
 variable "routes" {
   description = "API Gateway routes"
 

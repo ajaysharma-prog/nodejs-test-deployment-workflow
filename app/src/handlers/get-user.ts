@@ -1,10 +1,12 @@
 import { APIGatewayProxyResult } from "aws-lambda";
-import { ResponseMessage } from "../constant/ResponseMessage";
-import { getUser } from "../services/UserService";
-import { AuthenticatedRequestEvent } from "../utils/authenticatedRequestEvent";
-import { UserResponse } from "../dto/response/UserResponseDTO";
+import { ResponseMessage } from "../constants/response-message";
+import { getUser } from "../services/user-service";
+import { AuthenticatedRequestEvent } from "../utils/authenticated-api-gateway-event";
+import { UserDetails } from "../dto/response/user-detail-response";
 
-export const handler = async (event: AuthenticatedRequestEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (
+  event: AuthenticatedRequestEvent,
+): Promise<APIGatewayProxyResult> => {
   try {
     const email = event.requestContext.authorizer.email;
 
@@ -16,11 +18,11 @@ export const handler = async (event: AuthenticatedRequestEvent): Promise<APIGate
       };
     }
 
-    const userDetails: UserResponse = await getUser(email);
+    const userDetails: UserDetails = await getUser(email);
 
     return {
       statusCode: 200,
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -28,7 +30,6 @@ export const handler = async (event: AuthenticatedRequestEvent): Promise<APIGate
         userDetails: userDetails,
       }),
     };
-
   } catch (error: any) {
     if (error.message === "User not found") {
       return {

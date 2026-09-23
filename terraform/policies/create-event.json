@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDBTableAndGSIWritePermissions",
+      "Effect": "Allow",
+      "Action": ["dynamodb:PutItem"],
+      "Resource": ["${table_arn}", "${gsi_arn}"]
+    },
+    {
+      "Sid": "S3PutAndPresignPermissions",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": ["${bucket_arn}", "${bucket_arn}/*"]
+    }
+  ]
+}

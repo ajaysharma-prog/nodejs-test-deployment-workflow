@@ -18,5 +18,5 @@
     "verbatimModuleSyntax": false,
     "skipLibCheck": true
   },
-  "include": ["src", "src/dto/response/event-detail-response.ts"]
+  "include": ["src"]
 }

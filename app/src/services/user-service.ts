@@ -9,6 +9,7 @@ import { createUser, findByEmail } from "../repositories/user-repository";
 import { LoginUserDto } from "../dto/request/login-user-request";
 import { getSecret } from "../utils/ssm-secret-util";
 import { SignJWT } from "jose";
+import { ApiError } from "../utils/api-error";
 
 export async function registerUser(
   request: RegisterUserDto,
@@ -18,7 +19,7 @@ export async function registerUser(
 
   const existingUser = await findByEmail(email);
   if (existingUser) {
-    throw new Error(ResponseMessage.USER_ALREADY_EXISTS);
+    throw new ApiError(409, ResponseMessage.USER_ALREADY_EXISTS);
   }
 
   const userId = randomUUID();
@@ -62,7 +63,7 @@ export async function loginUser(loginUserDto: LoginUserDto): Promise<string> {
     user == null ||
     !(await comparePassword(loginUserDto.password, user.passwordHash))
   ) {
-    throw new Error(ResponseMessage.INVALID_LOGIN_CREDIENTAL);
+    throw new ApiError(401, ResponseMessage.INVALID_LOGIN_CREDIENTAL);
   }
 
   const secretKey = await getSecret(
@@ -86,7 +87,7 @@ export async function loginUser(loginUserDto: LoginUserDto): Promise<string> {
 export async function getUser(email: string): Promise<UserDetails> {
   const user = await findByEmail(email);
   if (user == null) {
-    throw new Error("User not found");
+    throw new ApiError(404, ResponseMessage.USER_NOT_FOUND);
   }
 
   const userDetails: UserDetails = {

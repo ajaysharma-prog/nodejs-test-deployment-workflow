@@ -194,6 +194,61 @@ module "create_ticket_tier_lambda_function" {
   lambda_timeout = var.lambda_timeout
 }
 
+module "get_all_events_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "get-all-events-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    create_ticket_tier_event = templatefile("${path.root}/policies/get-all-events.json", {
+      gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI2"]
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "get_all_events_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "get-events"
+  iam_role_arn      = module.get_all_events_iam_role.role_arn
+  function_name     = "get-all-events-lambda-function"
+  environment_variables = {
+    TABLE_NAME       = module.dynamoDB_tables.table_name,
+    EVENT_INDEX_NAME = "GSI2"
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
+module "get_event_by_id_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "get-event-by-id-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    create_ticket_tier_event = templatefile("${path.root}/policies/get-event-by-id.json", {
+      table_arn = module.dynamoDB_tables.table_arn
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "get_event_by_id_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "get-event"
+  iam_role_arn      = module.get_event_by_id_iam_role.role_arn
+  function_name     = "get-event-by-id-lambda-function"
+  environment_variables = {
+    TABLE_NAME       = module.dynamoDB_tables.table_name,
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
 module "api_gateway" {
   source               = "./modules/apigateway"
   api_name             = "${var.project_name}-api"
@@ -230,6 +285,15 @@ module "api_gateway" {
       invoke_arn    = module.create_ticket_tier_lambda_function.invoke_arn
     }
 
+    "get_all_events_lambda" = {
+      function_name = module.get_all_events_lambda_function.function_name
+      invoke_arn    = module.get_all_events_lambda_function.invoke_arn
+    }
+
+      "get_event_by_id_lambda" = {
+      function_name = module.get_event_by_id_lambda_function.function_name
+      invoke_arn    = module.get_event_by_id_lambda_function.invoke_arn
+    }
   }
   environment = var.environment
   description = var.api_gateway_description

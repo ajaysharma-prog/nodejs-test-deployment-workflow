@@ -1,6 +1,6 @@
 export const ResponseMessage = {
   MISSING_RESPONSE_BODY: "Response Body is missing.",
-  UNAUTHORIZED: "You are not authorized to perform this action.",
+  UNAUTHORIZED_ACTION: "You are not authorized to perform this action.",
   INTERNAL_ERROR: "An unexpected error occurred.",
   EMAIL_PASSWORD_REQUIRED: "Email and Password are required.",
   REGISTRATION_SUCCESS: "User registered successfully.",
@@ -13,4 +13,10 @@ export const ResponseMessage = {
   MISSING_PATH_URL: "Missing required URL path parameter",
   CREATE_TICKET_TIER_SUCCESS:
     "Ticket tiers created successfully for this event.",
+  NO_EVENT_FOUND: "Event not Found.",
+  SUCCESS: "Success",
+  INVALID_EVENT_ID: "No Event is associate with this event Id.",
+  EMAIL_CLAIM_NOT_FOUND: "Email claim not found.",
+  USER_NOT_FOUND: "User not Found.",
+  MALFORMED_JSON_BODY: "Malformed JSON body syntax.",
 } as const;

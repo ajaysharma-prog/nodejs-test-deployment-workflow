@@ -2,6 +2,7 @@ import {
   BatchWriteCommand,
   GetCommand,
   PutCommand,
+  QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb } from "../config/dynamo-db";
 import { Event } from "../models/event";
@@ -34,10 +35,6 @@ export async function getEventById(eventId: string): Promise<Event> {
       },
     }),
   );
-
-  if (!response.Item) {
-    throw new Error(`Event with ID ${eventId} not found.`);
-  }
   return response.Item as Event;
 }
 
@@ -66,4 +63,35 @@ export async function saveTicketTier(ticketTiers: TicketTier[]): Promise<void> {
 
     await dynamoDb.send(command);
   }
+}
+
+export async function getEvents(): Promise<Event[]> {
+  const response = await dynamoDb.send(
+    new QueryCommand({
+      TableName: process.env.TABLE_NAME!,
+      IndexName: process.env.EVENT_INDEX_NAME!,
+      KeyConditionExpression: "#PK = :pk",
+      ExpressionAttributeNames: {
+        "#PK": `${process.env.EVENT_INDEX_NAME}PK`,
+      },
+      ExpressionAttributeValues: {
+        ":pk": "EVENT",
+      },
+    }),
+  );
+
+  return response.Items as Event[];
+}
+
+export async function getEventAndTicketTier(eventId: string): Promise<any[]> {
+  const response = await dynamoDb.send(
+    new QueryCommand({
+      TableName: process.env.TABLE_NAME!,
+      KeyConditionExpression: "PK = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `EVENT#${eventId}`,
+      },
+    }),
+  );
+  return response.Items || [];
 }

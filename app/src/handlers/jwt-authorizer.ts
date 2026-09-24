@@ -48,7 +48,6 @@ export const handler = async (
       },
     };
   } catch (error) {
-    console.error("Authentication Security Guard Validation Failed:", error);
     throw new Error("Unauthorized");
   }
 };

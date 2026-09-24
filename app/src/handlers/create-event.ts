@@ -2,10 +2,11 @@ import { APIGatewayProxyResult } from "aws-lambda";
 import { AuthenticatedRequestEvent } from "../utils/authenticated-api-gateway-event";
 import { UserRole } from "../constants/user-role";
 import { EventSchema } from "../dto/request/create-event-request";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { EventDetails } from "../dto/response/event-detail-response";
 import { createEvent } from "../services/event-service";
 import { ResponseMessage } from "../constants/response-message";
+import { ApiError } from "../utils/api-error";
 
 export type CreateEventDTO = z.infer<typeof EventSchema>;
 
@@ -16,41 +17,19 @@ export const handler = async (
     if (
       event.requestContext.authorizer.role !== UserRole.ORGANIZER.toString()
     ) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          message: ResponseMessage.UNAUTHORIZED,
-        }),
-      };
+      throw new ApiError(403, ResponseMessage.UNAUTHORIZED_ACTION);
     }
 
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.MISSING_RESPONSE_BODY,
-        }),
-      };
+    if (!event.body || event.body.trim() === "") {
+      throw new ApiError(400, ResponseMessage.MISSING_RESPONSE_BODY);
     }
 
     const body = JSON.parse(event.body);
 
-    const result = EventSchema.safeParse(body);
-
-    if (!result.success) {
-      const flattened = z.flattenError(result.error);
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.VALIDATION_FAILED,
-          errors: flattened.fieldErrors,
-        }),
-      };
-    }
-
-    const eventDto: CreateEventDTO = result.data;
+    const eventDto: CreateEventDTO = await EventSchema.parseAsync(body);
     const organizerId = event.requestContext.authorizer.userId;
     const eventDetails: EventDetails = await createEvent(organizerId, eventDto);
+
     return {
       statusCode: 201,
       body: JSON.stringify({
@@ -59,11 +38,32 @@ export const handler = async (
       }),
     };
   } catch (error) {
+    if (error instanceof ApiError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ message: error.message }),
+      };
+    } else if (error instanceof ZodError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.VALIDATION_FAILED,
+          errors: z.flattenError(error).fieldErrors,
+        }),
+      };
+    } else if (error instanceof SyntaxError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.MALFORMED_JSON_BODY,
+        }),
+      };
+    }
+
     return {
       statusCode: 500,
       body: JSON.stringify({
         message: ResponseMessage.INTERNAL_ERROR,
-        error: error instanceof Error ? error.message : String(error),
       }),
     };
   }

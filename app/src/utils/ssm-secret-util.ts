@@ -1,13 +1,10 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { ResponseMessage } from "../constants/response-message";
+import { ApiError } from "./api-error";
 
 const ssmClient = new SSMClient({});
-let cachedSecret: string | undefined;
 
 export async function getSecret(parameterName: string): Promise<string> {
-  if (cachedSecret) {
-    return cachedSecret;
-  }
   const command = new GetParameterCommand({
     Name: parameterName,
     WithDecryption: true,
@@ -17,8 +14,7 @@ export async function getSecret(parameterName: string): Promise<string> {
   const secret = response.Parameter?.Value;
 
   if (secret == null) {
-    throw new Error(ResponseMessage.SSM_PARAMETER_NOT_FOUND);
+    throw new ApiError(404, ResponseMessage.SSM_PARAMETER_NOT_FOUND);
   }
-  cachedSecret = secret;
   return secret;
 }

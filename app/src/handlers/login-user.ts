@@ -1,33 +1,24 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ResponseMessage } from "../constants/response-message";
-import { LoginUserDto } from "../dto/request/login-user-request";
+import {
+  LoginUserDto,
+  LoginUserSchema,
+} from "../dto/request/login-user-request";
 import { loginUser } from "../services/user-service";
+import { ApiError } from "../utils/api-error";
+import z, { ZodError } from "zod";
 
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.MISSING_RESPONSE_BODY,
-        }),
-      };
+    if (!event.body || event.body.trim() === "") {
+      throw new ApiError(400, ResponseMessage.MISSING_RESPONSE_BODY);
     }
 
-    const body: LoginUserDto = JSON.parse(event.body);
-
-    if (!body.email || !body.password) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({
-          message: ResponseMessage.INVALID_LOGIN_CREDIENTAL,
-        }),
-      };
-    }
-
-    const jwtToken = await loginUser(body);
+    const body = JSON.parse(event.body);
+    const loginUserDto: LoginUserDto = await LoginUserSchema.parseAsync(body);
+    const jwtToken = await loginUser(loginUserDto);
 
     return {
       statusCode: 200,
@@ -38,14 +29,28 @@ export const handler = async (
       }),
     };
   } catch (error: any) {
-    console.error("Registration error:", error);
-
-    if (error.message === ResponseMessage.INVALID_LOGIN_CREDIENTAL) {
+    if (error instanceof ApiError) {
       return {
-        statusCode: 401,
+        statusCode: error.statusCode,
         body: JSON.stringify({ message: error.message }),
       };
+    } else if (error instanceof ZodError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.VALIDATION_FAILED,
+          errors: z.flattenError(error).fieldErrors,
+        }),
+      };
+    } else if (error instanceof SyntaxError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.MALFORMED_JSON_BODY,
+        }),
+      };
     }
+
     return {
       statusCode: 500,
       body: JSON.stringify({ message: ResponseMessage.INTERNAL_ERROR }),

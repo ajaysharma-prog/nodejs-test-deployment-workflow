@@ -1,30 +1,25 @@
+import { APIGatewayProxyEvent } from "aws-lambda";
 import { APIGatewayProxyResult } from "aws-lambda";
 import { ResponseMessage } from "../constants/response-message";
-import { getUser } from "../services/user-service";
-import { AuthenticatedRequestEvent } from "../utils/authenticated-api-gateway-event";
-import { UserDetails } from "../dto/response/user-detail-response";
+import { EventDetails } from "../dto/response/event-detail-response";
+import { getAllEvents } from "../services/event-service";
 import { ApiError } from "../utils/api-error";
 
 export const handler = async (
-  event: AuthenticatedRequestEvent,
+  event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const email = event.requestContext.authorizer.email;
-
-    if (!email) {
-      throw new ApiError(400, ResponseMessage.EMAIL_CLAIM_NOT_FOUND);
+    const events: EventDetails[] = await getAllEvents();
+    if (events.length === 0) {
+      throw new ApiError(404, ResponseMessage.NO_EVENT_FOUND);
     }
-
-    const userDetails: UserDetails = await getUser(email);
 
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: ResponseMessage.SUCCESS,
-        userDetails: userDetails,
+        eventsDetails: events,
       }),
     };
   } catch (error) {

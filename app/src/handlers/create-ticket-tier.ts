@@ -5,9 +5,10 @@ import {
   TicketTierdto,
   TicketTierSchema,
 } from "../dto/request/create-ticket-tier-request";
-import z from "zod";
+import z, { ZodError } from "zod";
 import { createTicketTier } from "../services/event-service";
 import { ResponseMessage } from "../constants/response-message";
+import { ApiError } from "../utils/api-error";
 
 export const handler = async (
   event: AuthenticatedRequestEvent,
@@ -16,49 +17,23 @@ export const handler = async (
     if (
       event.requestContext.authorizer.role !== UserRole.ORGANIZER.toString()
     ) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          message: ResponseMessage.UNAUTHORIZED,
-        }),
-      };
+      throw new ApiError(403, ResponseMessage.UNAUTHORIZED_ACTION);
     }
 
     const eventId = event.pathParameters?.eventId;
     if (!eventId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.MISSING_PATH_URL,
-        }),
-      };
+      throw new ApiError(404, ResponseMessage.MISSING_PATH_URL);
     }
 
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.MISSING_RESPONSE_BODY,
-        }),
-      };
+    if (!event.body || event.body.trim() === "") {
+      throw new ApiError(400, ResponseMessage.MISSING_RESPONSE_BODY);
     }
 
     const body = JSON.parse(event.body);
-    const result = TicketTierSchema.safeParse(body);
-    if (!result.success) {
-      const treeErrors = z.treeifyError(result.error);
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.VALIDATION_FAILED,
-          errors: treeErrors,
-        }),
-      };
-    }
 
-    const ticketTierdto: TicketTierdto = result.data;
+    const ticketTierdto: TicketTierdto =
+      await TicketTierSchema.parseAsync(body);
     const userId = event.requestContext.authorizer.userId;
-
     await createTicketTier(userId, eventId, ticketTierdto);
 
     return {
@@ -68,16 +43,32 @@ export const handler = async (
       }),
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const isAuthError = errorMessage.includes("authorized");
-
+    if (error instanceof ApiError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ message: error.message }),
+      };
+    } else if (error instanceof ZodError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.VALIDATION_FAILED,
+          errors: error.issues.map((issue) => issue.message),
+        }),
+      };
+    } else if (error instanceof SyntaxError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.MALFORMED_JSON_BODY,
+        }),
+      };
+    }
     return {
-      statusCode: isAuthError ? 403 : 500,
+      statusCode: 500,
       body: JSON.stringify({
-        message: isAuthError
-          ? "Authorization Denied"
-          : "Internal server error occurred.",
-        error: errorMessage,
+        message: ResponseMessage.INTERNAL_ERROR,
+        error: error instanceof Error ? error.message : String(error),
       }),
     };
   }

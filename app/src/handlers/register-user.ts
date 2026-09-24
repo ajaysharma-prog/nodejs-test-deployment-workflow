@@ -1,33 +1,27 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { RegisterUserDto } from "../dto/request/register-user-request";
+import {
+  RegisterUserDto,
+  RegisterUserSchema,
+} from "../dto/request/register-user-request";
 import { ResponseMessage } from "../constants/response-message";
 import { registerUser } from "../services/user-service";
+import { ApiError } from "../utils/api-error";
+import z, { ZodError } from "zod";
 
 export const handler = async (
   event: APIGatewayProxyEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.MISSING_RESPONSE_BODY,
-        }),
-      };
+    if (!event.body || event.body.trim() === "") {
+      throw new ApiError(400, ResponseMessage.MISSING_RESPONSE_BODY);
     }
 
     const body: RegisterUserDto = JSON.parse(event.body);
+    const validation: RegisterUserDto =
+      await RegisterUserSchema.parseAsync(body);
 
-    if (!body.email || !body.password) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          message: ResponseMessage.EMAIL_PASSWORD_REQUIRED,
-        }),
-      };
-    }
-
-    const createdUser = await registerUser(body);
+    const registerUserDto: RegisterUserDto = validation;
+    const createdUser = await registerUser(registerUserDto);
 
     return {
       statusCode: 201,
@@ -37,17 +31,26 @@ export const handler = async (
         user: createdUser,
       }),
     };
-  } catch (error: any) {
-    console.error("Registration error:", error);
-
-    if (
-      error.message === ResponseMessage.USER_ALREADY_EXISTS ||
-      error.name === "ConditionalCheckFailedException" ||
-      error.__type?.endsWith("#ConditionalCheckFailedException")
-    ) {
+  } catch (error) {
+    if (error instanceof ApiError) {
       return {
-        statusCode: 409,
+        statusCode: error.statusCode,
         body: JSON.stringify({ message: error.message }),
+      };
+    } else if (error instanceof ZodError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.VALIDATION_FAILED,
+          errors: z.flattenError(error).fieldErrors,
+        }),
+      };
+    } else if (error instanceof SyntaxError) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: ResponseMessage.MALFORMED_JSON_BODY,
+        }),
       };
     }
     return {

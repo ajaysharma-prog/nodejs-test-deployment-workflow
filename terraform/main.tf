@@ -10,6 +10,7 @@ module "dynamoDB_tables" {
   local_secondary_indexes  = var.local_secondary_indexes
   global_secondary_indexes = var.global_secondary_indexes
   aws_encryption_key_arn   = data.aws_kms_alias.dynamodb.arn
+  tags                     = {}
 }
 
 module "register_user_iam_role" {
@@ -23,6 +24,9 @@ module "register_user_iam_role" {
     })
   }
   managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+
 }
 
 module "register_user_lambda_function" {
@@ -34,19 +38,132 @@ module "register_user_lambda_function" {
     USER_TABLE_NAME       = module.dynamoDB_tables.table_name
     USER_EMAIL_INDEX_NAME = "GSI1"
   }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
+module "login_user_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "login-user-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    dynamodb-access = templatefile("${path.root}/policies/dynamodb-login-user.json", {
+      gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI1"]
+    })
+
+    ssm-parameter-access = templatefile("${path.root}/policies/ssm-get-parameter.json", {
+      jwt_key_arn = data.aws_ssm_parameter.jwt_secret.arn
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "login_user_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "loginUser"
+  iam_role_arn      = module.login_user_iam_role.role_arn
+  function_name     = "login_user_lambda_function"
+  environment_variables = {
+    USER_TABLE_NAME       = module.dynamoDB_tables.table_name
+    USER_EMAIL_INDEX_NAME = "GSI1",
+    ENVIRONMENT           = var.environment
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
 
 }
 
+module "authorizer_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "authorizer-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    ssm-parameter-access = templatefile("${path.root}/policies/ssm-get-parameter.json", {
+      jwt_key_arn = data.aws_ssm_parameter.jwt_secret.arn
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+
+module "authorizer_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "jwtAuthorizer"
+  iam_role_arn      = module.authorizer_iam_role.role_arn
+  function_name     = "jwt_autorizer_lambda_function"
+
+  environment_variables = {
+    ENVIRONMENT           = var.environment
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
+module "get_user_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "get-user-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    dynamodb-access = templatefile("${path.root}/policies/dynamodb-login-user.json", {
+      gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI1"]
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "get_user_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "getUser"
+  iam_role_arn      = module.get_user_iam_role.role_arn
+  function_name     = "get_user_lambda_function"
+  environment_variables = {
+    USER_TABLE_NAME       = module.dynamoDB_tables.table_name
+    USER_EMAIL_INDEX_NAME = "GSI1",
+    ENVIRONMENT           = var.environment
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
 module "api_gateway" {
-  source     = "./modules/apigatway"
+  source     = "./modules/apigateway"
   api_name   = "${var.project_name}-api"
   stage_name = var.environment
   resources  = var.resources
   routes     = var.routes
+  passthrough_behavior    = "when_no_match"
+  content_handling        = "CONVERT_TO_TEXT"
+
+  authorizer_lambda_invoke_arn = module.authorizer_lambda_function.invoke_arn
+  authorizer_lambda_name       = module.authorizer_lambda_function.function_name
   lambda_functions = {
     "register_user_lambda" = {
       function_name = module.register_user_lambda_function.function_name
       invoke_arn    = module.register_user_lambda_function.invoke_arn
     }
+
+    "login_user_lambda" = {
+      function_name = module.login_user_lambda_function.function_name
+      invoke_arn    = module.login_user_lambda_function.invoke_arn
+    }
+
+    "get_user_lambda" = {
+      function_name = module.get_user_lambda_function.function_name
+      invoke_arn    = module.get_user_lambda_function.invoke_arn
+    }
+    
   }
+  environment = var.environment
+  description = var.api_gateway_description
+  tags        = {}
 }

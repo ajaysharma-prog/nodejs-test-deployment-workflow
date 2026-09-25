@@ -8,35 +8,34 @@ resource "aws_api_gateway_rest_api" "event_management_system_api_gateway" {
       title   = var.api_name
       version = "1.0.0"
     }
-    paths = {
-      for route_key, route_val in var.routes : "/${route_val.resource_path}" => {
-        x-amazon-apigateway-any-method = {
-          produces = ["application/json"]
-          responses = {
-            "200" = {
-              description = "Success"
-            }
-          }
-          x-amazon-apigateway-integration = {
-            uri                 = var.lambda_functions[route_val.lambda_key].invoke_arn
-            responses           = { default = { statusCode = "200" } }
-            passthroughBehavior = "when_no_match"
-            httpMethod          = "POST"
-            contentHandling     = "CONVERT_TO_TEXT"
-            type                = "aws_proxy"
-          }
-        }
+    paths = local.api_paths
+    components = {
+  securitySchemes = {
+    jwtLambdaAuthorizer = {
+      type = "apiKey"
+      name = "Authorization"
+      in   = "header"
+      x-amazon-apigateway-authtype = "custom"
+      x-amazon-apigateway-authorizer = {
+        type                         = "token"
+         authorizerUri               = var.authorizer_lambda_invoke_arn
+        authorizerResultTtlInSeconds = 300
+        identitySource               = "method.request.header.Authorization"
       }
     }
+  }
+}
   })
 
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 
-  tags = {
-    Name = "${var.api_name}-rest-api"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.api_name}-rest-api"
+    })
 }
 
 resource "aws_lambda_permission" "api_gateway" {
@@ -46,6 +45,14 @@ resource "aws_lambda_permission" "api_gateway" {
   function_name = var.lambda_functions[each.value.lambda_key].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.event_management_system_api_gateway.execution_arn}/*"
+}
+
+resource "aws_lambda_permission" "api_gateway_authorizer" {
+  statement_id  = "AllowApiGatewayInvokeAuthorizer"
+  action        = "lambda:InvokeFunction"
+  function_name = var.authorizer_lambda_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.event_management_system_api_gateway.execution_arn}/authorizers/*"
 }
 
 resource "aws_api_gateway_deployment" "this" {
@@ -64,8 +71,9 @@ resource "aws_api_gateway_stage" "this" {
   rest_api_id   = aws_api_gateway_rest_api.event_management_system_api_gateway.id
   deployment_id = aws_api_gateway_deployment.this.id
   stage_name    = var.stage_name
-
-  tags = {
-    Name = "${var.api_name}-${var.stage_name}-stage"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.api_name}-${var.stage_name}-stage"
+    })
 }

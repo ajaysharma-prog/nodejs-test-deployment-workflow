@@ -71,3 +71,9 @@ variable "additional_attributes" {
   }))
   default = []
 }
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of resource tags."
+}

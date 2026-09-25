@@ -55,3 +55,37 @@ variable "lambda_functions" {
     invoke_arn    = string
   }))
 }
+
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "A mapping of resource tags."
+}
+
+variable "environment" {
+  type        = string
+  description = "Type of environment of the project like prod or dev"
+  default     = "dev"
+}
+
+variable "passthrough_behavior" {
+  type        = string
+  default     = "when_no_match"
+  description = "Fallback data body matching behaviors."
+}
+
+variable "content_handling" {
+  type        = string
+  default     = "CONVERT_TO_TEXT"
+  description = "Controls incoming payload data formatting conversions before hit execution."
+}
+
+variable "authorizer_lambda_invoke_arn" {
+  type        = string
+  description = "Authorizer lambda invoke arn"
+}
+
+variable "authorizer_lambda_name" {
+  type        = string
+  description = "Authorizer Lambda name"
+}

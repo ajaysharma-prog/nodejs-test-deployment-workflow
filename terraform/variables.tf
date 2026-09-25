@@ -8,7 +8,7 @@ variable "project_name" {
 
 variable "environment" {
   type        = string
-  description = "Type of eniroment of the project like prod or dev"
+  description = "Type of environment of the project like prod or dev"
   default     = "dev"
 }
 
@@ -81,6 +81,11 @@ variable "additional_attributes" {
   default = []
 }
 
+variable "lambda_timeout" {
+  type        = number
+  default     = 30
+  description = "The maximum amount of time (in seconds) that the Lambda function can run."
+}
 
 /////////////////////////////////////////////////////APIGATEWAY/////////////////////////////////////////////
 variable "resources" {
@@ -101,4 +106,10 @@ variable "routes" {
     lambda_key    = string
     authorization = optional(string, "NONE")
   }))
+}
+
+variable "api_gateway_description" {
+  description = "Description of the API Gateway"
+  type        = string
+  default     = null
 }

@@ -61,7 +61,9 @@ resource "aws_dynamodb_table" "main_table" {
     prevent_destroy = false
   }
 
-  tags = {
-    Name = "${var.environment}-${var.table_name}"
-  }
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.environment}-${var.table_name}"
+  })
 }

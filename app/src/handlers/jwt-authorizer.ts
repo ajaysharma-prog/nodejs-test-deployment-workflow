@@ -48,6 +48,7 @@ export const handler = async (
       },
     };
   } catch (error) {
+    console.log(`Application Error: ${error}`);
     throw new Error("Unauthorized");
   }
 };

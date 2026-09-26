@@ -8,5 +8,6 @@ data "aws_ssm_parameter" "jwt_secret" {
   with_decryption = false
 }
 
-data "aws_region" "current" {
-}
+data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}

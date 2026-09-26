@@ -29,6 +29,7 @@ export const handler = async (
       }),
     };
   } catch (error: any) {
+    console.log(`Application Error: ${error}`);
     if (error instanceof ApiError) {
       return {
         statusCode: error.statusCode,

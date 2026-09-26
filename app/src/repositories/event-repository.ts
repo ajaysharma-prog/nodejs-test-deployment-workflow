@@ -7,6 +7,9 @@ import {
 import { dynamoDb } from "../config/dynamo-db";
 import { Event } from "../models/event";
 import { TicketTier } from "../models/ticket-tier";
+import { TicketTierDetails } from "../dto/response/ticket-tier-response";
+import { ApiError } from "../utils/api-error";
+import { ResponseMessage } from "../constants/response-message";
 
 export async function saveEvent(event: Event): Promise<void> {
   const dbItem = {
@@ -94,4 +97,24 @@ export async function getEventAndTicketTier(eventId: string): Promise<any[]> {
     }),
   );
   return response.Items || [];
+}
+
+export async function getEventTicketTier(
+  eventId: string,
+): Promise<TicketTierDetails[]> {
+  const response = await dynamoDb.send(
+    new QueryCommand({
+      TableName: process.env.TABLE_NAME!,
+      KeyConditionExpression: "PK = :pk",
+      ExpressionAttributeValues: {
+        ":pk": `EVENT#${eventId}`,
+      },
+    }),
+  );
+
+  if (!response.Items) {
+    throw new ApiError(404, ResponseMessage.TICKET_TIER_NOT_FOUND);
+  }
+
+  return response.Items as TicketTierDetails[];
 }

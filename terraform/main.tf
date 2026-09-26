@@ -21,6 +21,11 @@ module "register_user_iam_role" {
     dynamodb-access = templatefile("${path.root}/policies/dynamodb-register-user.json", {
       table_arn = module.dynamoDB_tables.table_arn
       gsi_arn   = module.dynamoDB_tables.global_secondary_index_arns["GSI1"]
+    }),
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.register_user_lambda_function.function_name
     })
   }
   managed_policy_arns = []
@@ -55,6 +60,12 @@ module "login_user_iam_role" {
     ssm-parameter-access = templatefile("${path.root}/policies/ssm-get-parameter.json", {
       jwt_key_arn = data.aws_ssm_parameter.jwt_secret.arn
     })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.login_user_lambda_function.function_name
+    })
   }
   managed_policy_arns = []
   environment         = var.environment
@@ -85,6 +96,12 @@ module "authorizer_iam_role" {
     ssm-parameter-access = templatefile("${path.root}/policies/ssm-get-parameter.json", {
       jwt_key_arn = data.aws_ssm_parameter.jwt_secret.arn
     })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.authorizer_lambda_function.function_name
+    })
   }
   managed_policy_arns = []
   environment         = var.environment
@@ -111,8 +128,14 @@ module "get_user_iam_role" {
   role_name          = "get-user-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    dynamodb-access = templatefile("${path.root}/policies/dynamodb-login-user.json", {
+    dynamodb-access = templatefile("${path.root}/policies/dynamodb-get-user.json", {
       gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI1"]
+    })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.get_user_lambda_function.function_name
     })
   }
   managed_policy_arns = []
@@ -145,6 +168,12 @@ module "create_event_iam_role" {
       gsi_arn   = module.dynamoDB_tables.global_secondary_index_arns["GSI2"],
       bucket_arn = module.event_banner_s3_bucket.bucket_arn
     })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.create_event_lambda_function.function_name
+    })
   }
   managed_policy_arns = []
   environment         = var.environment
@@ -175,6 +204,12 @@ module "create_ticket_tier_iam_role" {
     create_ticket_tier_event = templatefile("${path.root}/policies/create-ticket-tier.json", {
       table_arn = module.dynamoDB_tables.table_arn,
     })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.create_ticket_tier_lambda_function.function_name
+    })
   }
   managed_policy_arns = []
   environment         = var.environment
@@ -201,6 +236,12 @@ module "get_all_events_iam_role" {
   custom_policies = {
     create_ticket_tier_event = templatefile("${path.root}/policies/get-all-events.json", {
       gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI2"]
+    })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.get_all_events_lambda_function.function_name
     })
   }
   managed_policy_arns = []
@@ -230,6 +271,12 @@ module "get_event_by_id_iam_role" {
     create_ticket_tier_event = templatefile("${path.root}/policies/get-event-by-id.json", {
       table_arn = module.dynamoDB_tables.table_arn
     })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.get_event_by_id_lambda_function.function_name
+    })
   }
   managed_policy_arns = []
   environment         = var.environment
@@ -241,6 +288,72 @@ module "get_event_by_id_lambda_function" {
   handler_file_name = "get-event"
   iam_role_arn      = module.get_event_by_id_iam_role.role_arn
   function_name     = "get-event-by-id-lambda-function"
+  environment_variables = {
+    TABLE_NAME       = module.dynamoDB_tables.table_name,
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
+module "create_booking_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "create-booking-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    create_ticket_tier_event = templatefile("${path.root}/policies/create-booking.json", {
+      table_arn = module.dynamoDB_tables.table_arn
+    })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.create_booking_lambda_function.function_name
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "create_booking_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "create-booking"
+  iam_role_arn      = module.create_booking_iam_role.role_arn
+  function_name     = "create-booking-lambda-function"
+  environment_variables = {
+    TABLE_NAME       = module.dynamoDB_tables.table_name,
+  }
+  environment    = var.environment
+  tags           = {}
+  lambda_timeout = var.lambda_timeout
+}
+
+module "get_booking_iam_role" {
+  source             = "./modules/iam"
+  role_name          = "get-booking-lambda-role"
+  assume_role_policy = file("${path.root}/policies/trust-policy.json")
+  custom_policies = {
+    create_ticket_tier_event = templatefile("${path.root}/policies/get-booking.json", {
+      table_arn = module.dynamoDB_tables.table_arn
+    })
+
+    logging = templatefile("${path.root}/policies/logging.json", {
+      REGION = data.aws_region.current.region,
+      ACCOUNT_ID = data.aws_caller_identity.current.id,
+      LAMBDA_FUNCTION_NAME = module.get_booking_lambda_function.function_name
+    })
+  }
+  managed_policy_arns = []
+  environment         = var.environment
+  tags                = {}
+}
+
+module "get_booking_lambda_function" {
+  source            = "./modules/lambda"
+  handler_file_name = "get-booking"
+  iam_role_arn      = module.get_booking_iam_role.role_arn
+  function_name     = "get-booking-lambda-function"
   environment_variables = {
     TABLE_NAME       = module.dynamoDB_tables.table_name,
   }
@@ -293,6 +406,16 @@ module "api_gateway" {
       "get_event_by_id_lambda" = {
       function_name = module.get_event_by_id_lambda_function.function_name
       invoke_arn    = module.get_event_by_id_lambda_function.invoke_arn
+    }
+
+      "create_booking_lambda" = {
+      function_name = module.create_booking_lambda_function.function_name
+      invoke_arn    = module.create_booking_lambda_function.invoke_arn
+    }
+
+    "get_booking_lambda" = {
+      function_name = module.get_booking_lambda_function.function_name
+      invoke_arn    = module.get_booking_lambda_function.invoke_arn
     }
   }
   environment = var.environment

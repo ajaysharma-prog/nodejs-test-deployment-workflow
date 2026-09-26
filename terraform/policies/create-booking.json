@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDBTableAndGSIWritePermissions",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:TransactWriteItems",
+        "dynamodb:UpdateItem",
+        "dynamodb:PutItem",
+        "dynamodb:Query"
+      ],
+      "Resource": ["${table_arn}"]
+    }
+  ]
+}

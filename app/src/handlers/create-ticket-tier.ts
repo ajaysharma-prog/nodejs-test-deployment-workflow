@@ -38,11 +38,14 @@ export const handler = async (
 
     return {
       statusCode: 201,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: ResponseMessage.CREATE_TICKET_TIER_SUCCESS,
       }),
     };
   } catch (error) {
+    console.log(`Application Error: ${error}`);
+
     if (error instanceof ApiError) {
       return {
         statusCode: error.statusCode,

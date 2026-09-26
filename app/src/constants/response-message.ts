@@ -19,4 +19,6 @@ export const ResponseMessage = {
   EMAIL_CLAIM_NOT_FOUND: "Email claim not found.",
   USER_NOT_FOUND: "User not Found.",
   MALFORMED_JSON_BODY: "Malformed JSON body syntax.",
+  TICKET_TIER_NOT_FOUND: "No Ticket tier details exists for this event.",
+  NO_BOOKING_FOUND: "No bookings found for this user.",
 } as const;

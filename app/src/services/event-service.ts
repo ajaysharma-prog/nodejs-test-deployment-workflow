@@ -8,6 +8,7 @@ import {
   getEventAndTicketTier,
   getEventById,
   getEvents,
+  getEventTicketTier,
   saveEvent,
   saveTicketTier,
 } from "../repositories/event-repository";

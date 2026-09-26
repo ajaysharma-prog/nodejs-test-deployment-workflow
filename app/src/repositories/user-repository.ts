@@ -25,7 +25,7 @@ export async function createUser(user: User): Promise<void> {
   try {
     const dbItem = {
       ...user,
-      PK: `USER#${user.email}`,
+      PK: `USER#${user.userId}`,
       SK: "METADATA",
       GSI1PK: `USER#${user.email}`,
       GSI1SK: "METADATA",

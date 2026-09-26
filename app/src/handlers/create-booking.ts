@@ -1,50 +1,45 @@
 import { APIGatewayProxyResult } from "aws-lambda";
 import { AuthenticatedRequestEvent } from "../utils/authenticated-api-gateway-event";
-import { UserRole } from "../constants/user-role";
-import { EventSchema } from "../dto/request/create-event-request";
-import { z, ZodError } from "zod";
-import { EventDetails } from "../dto/response/event-detail-response";
-import { createEvent } from "../services/event-service";
-import { ResponseMessage } from "../constants/response-message";
 import { ApiError } from "../utils/api-error";
-
-export type CreateEventDTO = z.infer<typeof EventSchema>;
+import { ResponseMessage } from "../constants/response-message";
+import {
+  CreateBookingDto,
+  CreateBookingSchema,
+} from "../dto/request/create-booking-request";
+import z, { ZodError } from "zod";
+import { createBooking } from "../services/booking-service";
 
 export const handler = async (
   event: AuthenticatedRequestEvent,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    if (
-      event.requestContext.authorizer.role !== UserRole.ORGANIZER.toString()
-    ) {
-      throw new ApiError(403, ResponseMessage.UNAUTHORIZED_ACTION);
-    }
+    const attendeeId: string = event.requestContext.authorizer.userId;
 
     if (!event.body || event.body.trim() === "") {
       throw new ApiError(400, ResponseMessage.MISSING_RESPONSE_BODY);
     }
-
     const body = JSON.parse(event.body);
 
-    const eventDto: CreateEventDTO = await EventSchema.parseAsync(body);
-    const organizerId = event.requestContext.authorizer.userId;
-    const eventDetails: EventDetails = await createEvent(organizerId, eventDto);
-
+    const createBookingDto: CreateBookingDto =
+      await CreateBookingSchema.parseAsync(body);
+    console.log("===================");
+    await createBooking(attendeeId, createBookingDto);
+    console.log("done");
     return {
       statusCode: 201,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: ResponseMessage.CREATE_EVENT_SUCCESS,
-        eventDetails: eventDetails,
       }),
     };
   } catch (error) {
-    console.log(`Application Error: ${error}`);
-
+    console.log(error);
     if (error instanceof ApiError) {
       return {
         statusCode: error.statusCode,
-        body: JSON.stringify({ message: error.message }),
+        body: JSON.stringify({
+          message: error.message,
+        }),
       };
     } else if (error instanceof ZodError) {
       return {
@@ -64,7 +59,7 @@ export const handler = async (
     }
 
     return {
-      statusCode: 500,
+      statusCode: 400,
       body: JSON.stringify({
         message: ResponseMessage.INTERNAL_ERROR,
       }),

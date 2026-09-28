@@ -22,14 +22,12 @@ export const handler = async (
 
     const createBookingDto: CreateBookingDto =
       await CreateBookingSchema.parseAsync(body);
-    console.log("===================");
     await createBooking(attendeeId, createBookingDto);
-    console.log("done");
     return {
       statusCode: 201,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        message: ResponseMessage.CREATE_EVENT_SUCCESS,
+        message: ResponseMessage.CREATE_BOOKING_SUCCESS,
       }),
     };
   } catch (error) {

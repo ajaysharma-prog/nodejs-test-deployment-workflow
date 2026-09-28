@@ -11,7 +11,7 @@ export const TicketTierItemSchema = z.object({
   availableCapacity: z
     .number({ error: "Available capacity is required." })
     .int()
-    .min(1),
+    .min(1, { error: "Price cannot be negative or zero." }),
 });
 
 export const TicketTierSchema = z.object({

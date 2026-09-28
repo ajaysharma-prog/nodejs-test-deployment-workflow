@@ -16,7 +16,7 @@ export const handler = async (
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: ResponseMessage.SUCCESS,
-        eventDetails: bookingDetails,
+        bookingDetails: bookingDetails,
       }),
     };
   } catch (error) {

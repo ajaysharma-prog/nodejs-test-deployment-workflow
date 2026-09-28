@@ -163,7 +163,7 @@ module "create_event_iam_role" {
   role_name          = "create-event-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_event = templatefile("${path.root}/policies/create-event.json", {
+    dynamodb-access_and_s3_access = templatefile("${path.root}/policies/create-event.json", {
       table_arn = module.dynamoDB_tables.table_arn,
       gsi_arn   = module.dynamoDB_tables.global_secondary_index_arns["GSI2"],
       bucket_arn = module.event_banner_s3_bucket.bucket_arn
@@ -201,7 +201,7 @@ module "create_ticket_tier_iam_role" {
   role_name          = "create-ticket-tier-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_ticket_tier_event = templatefile("${path.root}/policies/create-ticket-tier.json", {
+    dynamodb-access = templatefile("${path.root}/policies/create-ticket-tier.json", {
       table_arn = module.dynamoDB_tables.table_arn,
     })
 
@@ -234,7 +234,7 @@ module "get_all_events_iam_role" {
   role_name          = "get-all-events-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_ticket_tier_event = templatefile("${path.root}/policies/get-all-events.json", {
+    dynamodb-access = templatefile("${path.root}/policies/get-all-events.json", {
       gsi_arn = module.dynamoDB_tables.global_secondary_index_arns["GSI2"]
     })
 
@@ -268,7 +268,7 @@ module "get_event_by_id_iam_role" {
   role_name          = "get-event-by-id-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_ticket_tier_event = templatefile("${path.root}/policies/get-event-by-id.json", {
+    dynamodb-access = templatefile("${path.root}/policies/get-event-by-id.json", {
       table_arn = module.dynamoDB_tables.table_arn
     })
 
@@ -301,7 +301,7 @@ module "create_booking_iam_role" {
   role_name          = "create-booking-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_ticket_tier_event = templatefile("${path.root}/policies/create-booking.json", {
+    dynamodb-access = templatefile("${path.root}/policies/create-booking.json", {
       table_arn = module.dynamoDB_tables.table_arn
     })
 
@@ -334,7 +334,7 @@ module "get_booking_iam_role" {
   role_name          = "get-booking-lambda-role"
   assume_role_policy = file("${path.root}/policies/trust-policy.json")
   custom_policies = {
-    create_ticket_tier_event = templatefile("${path.root}/policies/get-booking.json", {
+    dynamodb-access = templatefile("${path.root}/policies/get-booking.json", {
       table_arn = module.dynamoDB_tables.table_arn
     })
 
@@ -432,7 +432,7 @@ module "event_banner_s3_bucket" {
   versioning_enabled        = true
   enable_lifecycle_archival = true
   lifecycle_filter_prefix   = "${var.environment}/"
-  force_destroy             = false
+  force_destroy             = true
 
   tags = {}
 }

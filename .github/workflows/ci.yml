@@ -1,0 +1,162 @@
+name: CI/CD - Node.js Build and Terraform Deployment
+on:
+  pull_request:
+    branches: [main, dev, "feature/**"]
+  push:
+    branches: [main, dev, "feature/**"]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: ${{vars.NODE_VERSION}}
+  TERRAFORM_VERSION: ${{vars.TERRAFORM_VERSION}}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    outputs:
+      environment: ${{ steps.set-env.outputs.ENVIRONMENT }}
+      branch: ${{ steps.set-env.outputs.BRANCH_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure Environment Names
+        id: set-env
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.base_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          if [[ "$BRANCH" == "main" ]]; then
+            ENVIRONMENT="prod"
+          else 
+            ENVIRONMENT="dev"
+          fi
+          echo "ENVIRONMENT=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+          echo "BRANCH_NAME=$BRANCH" >> "$GITHUB_OUTPUT"
+      - name: Node setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test
+        run: npm run test
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Upload dist folder artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: lambda-dist-files
+          path: app/dist/bundles/
+          retention-days: 1
+
+  terraform-plan:
+    name: "Terraform Plan"
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      ENVIRONMENT: ${{ needs.test-and-build.outputs.environment }}
+    steps:
+      - name: Checkout-code
+        uses: actions/checkout@v4
+
+      - name: Download Lambda Code Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: lambda-dist-files
+          path: app/dist/bundles
+          merge-multiple: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{env.TERRAFORM_VERSION}}
+          terraform_wrapper: false
+
+      - name: Terraform-format
+        run: terraform fmt -recursive
+
+      - name: Terraform-init
+        run: |
+          terraform init -input=false \
+            -backend-config="${{ env.ENVIRONMENT }}.hcl" \
+            -backend-config="key=${{ env.ENVIRONMENT }}/terraform.tfstate"
+      - name: Terraform-validate
+        run: terraform validate
+
+      - name: Terraform-plan
+        id: plan
+        run: |
+          set +e
+          terraform plan -var-file="${{ env.ENVIRONMENT }}.tfvars" -input=false -out=tfplan -detailed-exitcode
+          EXIT_CODE=$?
+          set -e
+          if [ $EXIT_CODE -eq 0 ] || [ $EXIT_CODE -eq 2 ]; then
+            echo "Plan generated successfully."
+            exit 0
+          else
+            echo "Terraform plan failed with error code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+      - name: Upload Generated Plan and Zip Bundles
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.ENVIRONMENT }}-tfplan
+          path: |
+            terraform/tfplan
+            terraform/zip/
+          retention-days: 2
+
+  terraform-apply:
+    name: "Terraform Apply"
+    needs: [test-and-build, terraform-plan]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    env:
+      ENVIRONMENT: ${{ needs.test-and-build.outputs.environment }}
+    steps:
+      - name: Checkout-code
+        uses: actions/checkout@v4
+
+      - name: Download Lambda Code Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: lambda-dist-files
+          path: app/dist/bundles
+
+      - name: Download Saved Plan and Generated Zips
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.ENVIRONMENT }}-tfplan-and-lambda-code-zip
+          path: terraform/
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{env.TERRAFORM_VERSION}}
+          terraform_wrapper: false
+
+      - name: Terraform-init
+        run: |
+          terraform init -input=false \
+            -backend-config="${{ env.ENVIRONMENT }}.hcl" \
+            -backend-config="key=${{ env.ENVIRONMENT }}/terraform.tfstate"
+      - name: Terraform-apply
+        run: terraform apply -auto-approve tfplan
